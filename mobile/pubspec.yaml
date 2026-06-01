@@ -1,0 +1,43 @@
+name: meu_condominio
+description: Ecossistema Condominial - Gestor de Encomendas
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Estado
+  flutter_bloc: ^8.1.5
+  equatable: ^2.0.5
+
+  # Navegação
+  go_router: ^13.2.0
+
+  # HTTP
+  dio: ^5.4.3
+
+  # Auth & Armazenamento Seguro
+  flutter_secure_storage: ^9.0.0
+
+  # Câmera / Galeria
+  image_picker: ^1.1.2
+  camera: ^0.11.0
+
+  # UI
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  bloc_test: ^9.1.7
+  mocktail: ^1.0.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

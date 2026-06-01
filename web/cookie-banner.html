@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeuCondomínio — Demonstração do Banner LGPD</title>
+    <style>
+        /* ─── Reset & Base ─── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f5f7fa;
+        }
+
+        /* ─── Banner de Cookies LGPD ─── */
+        #cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, .35);
+            /* Começa oculto — JS decide se mostra */
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: opacity .35s ease, transform .35s ease, visibility 0s linear .35s;
+        }
+
+        #cookie-banner.visible {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity .35s ease, transform .35s ease;
+        }
+
+        .cookie-text {
+            flex: 1 1 300px;
+            font-size: .9rem;
+            line-height: 1.55;
+        }
+
+        .cookie-text a {
+            color: #63b3ed;
+            text-decoration: underline;
+        }
+
+        .cookie-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .btn-cookie {
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: background .2s, color .2s, border-color .2s;
+            min-height: 44px;
+            /* WCAG touch target */
+        }
+
+        .btn-aceitar {
+            background: #2b6cb0;
+            color: #fff;
+        }
+
+        .btn-aceitar:hover {
+            background: #2c5282;
+        }
+
+        .btn-recusar {
+            background: transparent;
+            color: #e2e8f0;
+            border-color: #4a5568;
+        }
+
+        .btn-recusar:hover {
+            background: #2d3748;
+        }
+
+        .btn-personalizar {
+            background: transparent;
+            color: #a0aec0;
+            border-color: transparent;
+            font-size: .8rem;
+            text-decoration: underline;
+        }
+
+        /* ─── Conteúdo de demonstração ─── */
+        main {
+            max-width: 720px;
+            margin: 80px auto 160px;
+            padding: 0 16px;
+        }
+
+        h1 {
+            color: #1a56db;
+            margin-bottom: 12px;
+        }
+
+        p {
+            line-height: 1.7;
+            color: #4a5568;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ════════════════════════════════════════════════════
+     BANNER DE CONSENTIMENTO DE COOKIES (LGPD)
+     ════════════════════════════════════════════════════ -->
+    <div id="cookie-banner" role="dialog" aria-live="polite" aria-label="Aviso de Cookies">
+        <div class="cookie-text">
+            <strong>🍪 Utilizamos cookies</strong> para garantir o funcionamento do site,
+            analisar o tráfego e personalizar sua experiência.
+            Ao clicar em <strong>Aceitar Todos</strong>, você consente com o uso de cookies
+            conforme nossa <a href="/politica-de-privacidade" target="_blank" rel="noopener">Política de Privacidade</a>
+            e nossa <a href="/politica-de-cookies" target="_blank" rel="noopener">Política de Cookies</a>
+            (Lei nº 13.709/2018 – LGPD, Art. 8º).
+        </div>
+
+        <div class="cookie-actions">
+            <button class="btn-cookie btn-recusar" id="btn-recusar" type="button">
+                Recusar Não Essenciais
+            </button>
+            <button class="btn-cookie btn-personalizar" id="btn-personalizar" type="button">
+                Personalizar
+            </button>
+            <button class="btn-cookie btn-aceitar" id="btn-aceitar" type="button">
+                Aceitar Todos
+            </button>
+        </div>
+    </div>
+
+    <main>
+        <h1>MeuCondomínio</h1>
+        <p>Esta página demonstra o comportamento do Banner de Cookies em conformidade com a LGPD.</p>
+        <p style="margin-top:16px">
+            <strong>Regras implementadas:</strong><br>
+            1. O banner aparece ao carregar caso o consentimento não tenha sido registrado.<br>
+            2. Após "Aceitar" ou "Recusar", a escolha é salva em <code>localStorage</code>
+            e o banner não reaparece na sessão.<br>
+            3. Se o usuário limpar o cache, dados do site ou usar aba anônima, o banner
+            reaparece obrigatoriamente no primeiro acesso.<br>
+            4. O banner não usa cookies próprios para registrar o consentimento —
+            usa <code>localStorage</code> para máxima compatibilidade com blockers.
+        </p>
+    </main>
+
+    <script>
+        (() => {
+            'use strict';
+
+            const CONSENT_KEY = 'lgpd_cookie_consent';
+            const CONSENT_VERSION = '1.0';      // Incremente para forçar novo consentimento em caso de mudança de política
+            const banner = document.getElementById('cookie-banner');
+
+            // ──────────────────────────────────────────────────
+            // Verifica se o consentimento já foi registrado
+            // e se a versão da política ainda é válida.
+            // ──────────────────────────────────────────────────
+            function consentimentoRegistrado() {
+                try {
+                    const raw = localStorage.getItem(CONSENT_KEY);
+                    if (!raw) return false;
+                    const saved = JSON.parse(raw);
+                    // Invalida se a versão da política mudou
+                    return saved?.version === CONSENT_VERSION;
+                } catch {
+                    // JSON malformado ou localStorage bloqueado (modo anônimo restrito)
+                    return false;
+                }
+            }
+
+            // ──────────────────────────────────────────────────
+            // Persiste a decisão do usuário
+            // ──────────────────────────────────────────────────
+            function salvarConsentimento(decision) {
+                const payload = {
+                    version: CONSENT_VERSION,
+                    decision: decision,   // 'accepted' | 'rejected' | 'customized'
+                    timestamp: new Date().toISOString(),
+                };
+                try {
+                    localStorage.setItem(CONSENT_KEY, JSON.stringify(payload));
+                } catch {
+                    // localStorage não disponível (iOS em modo privado com storage bloqueado)
+                    // Fallback: cookie de sessão (não persiste — banner reaparece na próxima visita)
+                    document.cookie = `${CONSENT_KEY}=${encodeURIComponent(JSON.stringify(payload))}; path=/; SameSite=Strict`;
+                }
+            }
+
+            // ──────────────────────────────────────────────────
+            // Oculta o banner com animação
+            // ──────────────────────────────────────────────────
+            function ocultarBanner() {
+                banner.classList.remove('visible');
+            }
+
+            // ──────────────────────────────────────────────────
+            // Carrega scripts de analytics conforme decisão
+            // ──────────────────────────────────────────────────
+            function aplicarConsentimento(decision) {
+                if (decision === 'accepted') {
+                    // Aqui você carrega scripts de analytics (ex: Google Analytics, Hotjar)
+                    // window.gtag?.('consent', 'update', { analytics_storage: 'granted' });
+                    console.info('[LGPD] Cookies analíticos ativados.');
+                } else {
+                    // Bloqueia/remove scripts de terceiros
+                    console.info('[LGPD] Cookies não-essenciais bloqueados.');
+                }
+            }
+
+            // ──────────────────────────────────────────────────
+            // Inicialização: exibe o banner se necessário
+            // ──────────────────────────────────────────────────
+            function init() {
+                if (consentimentoRegistrado()) {
+                    // Aplica a última decisão salva sem exibir o banner
+                    try {
+                        const saved = JSON.parse(localStorage.getItem(CONSENT_KEY));
+                        aplicarConsentimento(saved.decision);
+                    } catch { /* ignore */ }
+                    return;
+                }
+
+                // Exibe o banner (setTimeout garante que o CSS transition seja disparado)
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        banner.classList.add('visible');
+                    });
+                });
+            }
+
+            // ──────────────────────────────────────────────────
+            // Event Listeners
+            // ──────────────────────────────────────────────────
+            document.getElementById('btn-aceitar').addEventListener('click', () => {
+                salvarConsentimento('accepted');
+                aplicarConsentimento('accepted');
+                ocultarBanner();
+            });
+
+            document.getElementById('btn-recusar').addEventListener('click', () => {
+                salvarConsentimento('rejected');
+                aplicarConsentimento('rejected');
+                ocultarBanner();
+            });
+
+            document.getElementById('btn-personalizar').addEventListener('click', () => {
+                // Aqui abre modal de personalização granular (ex: analytics ON, marketing OFF)
+                alert('Modal de personalização de cookies (implementar conforme categorias do seu site).');
+            });
+
+            // Inicializa ao carregar o DOM
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+
+</html>
