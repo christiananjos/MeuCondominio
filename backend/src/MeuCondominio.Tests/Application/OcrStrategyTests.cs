@@ -10,9 +10,16 @@ public sealed class OcrStrategyTests
     // MercadoLivreOcrStrategy
     // ──────────────────────────────────────────────────────────
     [Theory]
+    // Casos com letras (padrão antigo)
     [InlineData("Complemento: Bloco B Apto 304",      "B",  "304")]
     [InlineData("Complemento : Bloco  A  Apto  101",  "A",  "101")]
     [InlineData("complemento: bloco C apto 202",      "C",  "202")]
+    // Casos reais com números (etiqueta amarela Mercado Livre foto)
+    [InlineData("Complemento: Bloco 6 Apto 3",        "6",  "3")]
+    [InlineData("Complemento: Bloco 12 Apto 45",      "12", "45")]
+    // OCR com quebra de linha entre Bloco e Apto
+    [InlineData("Complemento: Bloco 6\nApto 3",       "6",  "3")]
+    [InlineData("Complemento: Bloco B\r\nApto 304",   "B",  "304")]
     public void MercadoLivre_TextoValido_DeveRetornarSucesso(
         string texto, string blocoEsperado, string aptoEsperado)
     {
